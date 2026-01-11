@@ -15,27 +15,30 @@ import {
 import { type StatsResponse } from "@shared/routes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
+import { useCurrency } from "@/hooks/use-currency";
 
 interface ChartsProps {
   stats: StatsResponse;
 }
 
 const COLORS = [
-  "#10b981", // emerald-500
-  "#3b82f6", // blue-500
-  "#f59e0b", // amber-500
-  "#ef4444", // red-500
-  "#8b5cf6", // violet-500
-  "#ec4899", // pink-500
-  "#06b6d4", // cyan-500
-  "#84cc16", // lime-500
+  "#10b981",
+  "#3b82f6",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#84cc16",
 ];
 
 export function Charts({ stats }: ChartsProps) {
+  const { currency, formatShort } = useCurrency();
+
   const monthlyData = stats.monthly.map(item => ({
     name: format(parseISO(item.month + "-01"), "MMM yyyy"),
     total: item.total / 100,
-  })).reverse().slice(0, 12).reverse(); // Show last 12 months in correct order
+  })).reverse().slice(0, 12).reverse();
 
   const categoryData = stats.byCategory.map(item => ({
     name: item.category,
@@ -71,10 +74,10 @@ export function Charts({ stats }: ChartsProps) {
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false}
-                  tickFormatter={(value) => `$${value}`} 
+                  tickFormatter={(value) => `${currency.symbol}${value}`} 
                 />
                 <Tooltip 
-                  formatter={(value: number) => [`$${value.toFixed(2)}`, "Total"]}
+                  formatter={(value: number) => [`${currency.symbol}${value.toFixed(2)}`, "Total"]}
                   contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
                 />
                 <Area 
@@ -113,7 +116,7 @@ export function Charts({ stats }: ChartsProps) {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => `$${value.toFixed(2)}`}
+                  formatter={(value: number) => `${currency.symbol}${value.toFixed(2)}`}
                   contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
                 />
               </PieChart>

@@ -4,6 +4,7 @@ import { StatsCards } from "@/components/StatsCards";
 import { Charts } from "@/components/Charts";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { useStats, useExpenses } from "@/hooks/use-expenses";
+import { useCurrency } from "@/hooks/use-currency";
 import { Button } from "@/components/ui/button";
 import { Plus, ReceiptText } from "lucide-react";
 import { format } from "date-fns";
@@ -14,6 +15,7 @@ export default function Dashboard() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: recentExpenses, isLoading: expensesLoading } = useExpenses();
+  const { formatShort } = useCurrency();
 
   const isLoading = statsLoading || expensesLoading;
 
@@ -22,7 +24,6 @@ export default function Dashboard() {
       <Sidebar />
       
       <main className="ml-64 p-8">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
@@ -33,6 +34,7 @@ export default function Dashboard() {
           <Button 
             onClick={() => setIsFormOpen(true)}
             className="shadow-lg shadow-primary/25 hover:shadow-primary/30 transition-all active:scale-95"
+            data-testid="button-add-transaction"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Transaction
@@ -56,7 +58,6 @@ export default function Dashboard() {
             {stats && <StatsCards stats={stats} />}
             {stats && <Charts stats={stats} />}
 
-            {/* Recent Transactions Preview */}
             <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-border/50 flex items-center justify-between">
                 <h3 className="font-display font-bold text-lg">Recent Activity</h3>
@@ -82,7 +83,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                           <span className="font-mono font-medium">
-                            -${(expense.amount / 100).toFixed(2)}
+                            -{formatShort(expense.amount)}
                           </span>
                         </div>
                       ))}

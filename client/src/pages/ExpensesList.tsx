@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { useExpenses, useDeleteExpense } from "@/hooks/use-expenses";
+import { useCurrency } from "@/hooks/use-currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Trash2, Edit2, AlertCircle } from "lucide-react";
@@ -35,6 +36,7 @@ export default function ExpensesList() {
 
   const { data: expenses, isLoading } = useExpenses();
   const deleteMutation = useDeleteExpense();
+  const { formatShort } = useCurrency();
 
   const filteredExpenses = expenses?.filter(expense => 
     expense.description.toLowerCase().includes(search.toLowerCase()) ||
@@ -75,6 +77,7 @@ export default function ExpensesList() {
             <Button 
               onClick={() => setIsFormOpen(true)}
               className="shadow-lg shadow-primary/25 hover:shadow-primary/30 transition-all"
+              data-testid="button-add-transaction"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Transaction
@@ -89,6 +92,7 @@ export default function ExpensesList() {
                 className="pl-10"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                data-testid="input-search"
               />
             </div>
           </div>
@@ -111,7 +115,7 @@ export default function ExpensesList() {
                   </TableRow>
                 ) : filteredExpenses && filteredExpenses.length > 0 ? (
                   filteredExpenses.map((expense) => (
-                    <TableRow key={expense.id} className="group">
+                    <TableRow key={expense.id} className="group" data-testid={`row-expense-${expense.id}`}>
                       <TableCell className="font-medium text-muted-foreground">
                         {format(new Date(expense.date), "MMM dd, yyyy")}
                       </TableCell>
@@ -122,7 +126,7 @@ export default function ExpensesList() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono font-medium">
-                        ${(expense.amount / 100).toFixed(2)}
+                        {formatShort(expense.amount)}
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -131,6 +135,7 @@ export default function ExpensesList() {
                             size="icon" 
                             className="h-8 w-8 text-muted-foreground hover:text-primary"
                             onClick={() => handleEdit(expense)}
+                            data-testid={`button-edit-${expense.id}`}
                           >
                             <Edit2 className="w-4 h-4" />
                           </Button>
@@ -139,6 +144,7 @@ export default function ExpensesList() {
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                             onClick={() => setDeletingId(expense.id)}
+                            data-testid={`button-delete-${expense.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

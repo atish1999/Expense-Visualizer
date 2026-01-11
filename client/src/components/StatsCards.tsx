@@ -1,19 +1,19 @@
-import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, TrendingUp } from "lucide-react";
+import { TrendingUp, Wallet, Coins } from "lucide-react";
 import { type StatsResponse } from "@shared/routes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrency } from "@/hooks/use-currency";
 
 interface StatsCardsProps {
   stats: StatsResponse;
 }
 
 export function StatsCards({ stats }: StatsCardsProps) {
-  const totalSpent = stats.total / 100;
+  const { formatAmount, currency } = useCurrency();
+  const totalSpent = stats.total;
   
-  // Calculate average daily spend (simplified for now)
   const currentDay = new Date().getDate();
   const dailyAverage = totalSpent / (currentDay || 1);
 
-  // Find highest category
   const topCategory = stats.byCategory.length > 0 
     ? stats.byCategory.reduce((prev, current) => (prev.total > current.total) ? prev : current)
     : { category: "N/A", total: 0 };
@@ -26,12 +26,12 @@ export function StatsCards({ stats }: StatsCardsProps) {
             Total Spent
           </CardTitle>
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-            <DollarSign className="h-4 w-4" />
+            <Coins className="h-4 w-4" />
           </div>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold font-display tracking-tight">
-            ${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {formatAmount(totalSpent)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Lifetime spending
@@ -53,7 +53,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
             {topCategory.category}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            ${(topCategory.total / 100).toFixed(2)} spent
+            {formatAmount(topCategory.total)} spent
           </p>
         </CardContent>
       </Card>
@@ -69,7 +69,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold font-display tracking-tight">
-            ${dailyAverage.toFixed(2)}
+            {formatAmount(dailyAverage)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             This month so far

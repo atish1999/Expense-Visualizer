@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertExpenseSchema, type Expense, type InsertExpense } from "@shared/schema";
 import { useCreateExpense, useUpdateExpense } from "@/hooks/use-expenses";
+import { useCurrency } from "@/hooks/use-currency";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -60,6 +61,7 @@ const CATEGORIES = [
 export function ExpenseForm({ open, onOpenChange, expenseToEdit }: ExpenseFormProps) {
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
+  const { currency } = useCurrency();
 
   const isEditing = !!expenseToEdit;
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -75,7 +77,6 @@ export function ExpenseForm({ open, onOpenChange, expenseToEdit }: ExpenseFormPr
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Convert dollars to cents for storage
     const payload = {
       ...values,
       amount: Math.round(values.amount * 100),
@@ -114,15 +115,21 @@ export function ExpenseForm({ open, onOpenChange, expenseToEdit }: ExpenseFormPr
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount ($)</FormLabel>
+                  <FormLabel>Amount ({currency.symbol})</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      className="text-lg font-mono"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">
+                        {currency.symbol}
+                      </span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        className="text-lg font-mono pl-8"
+                        data-testid="input-amount"
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,7 +143,11 @@ export function ExpenseForm({ open, onOpenChange, expenseToEdit }: ExpenseFormPr
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="Grocery shopping, Netflix, etc." {...field} />
+                    <Input 
+                      placeholder="Grocery shopping, Netflix, etc." 
+                      {...field} 
+                      data-testid="input-description"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,7 +162,7 @@ export function ExpenseForm({ open, onOpenChange, expenseToEdit }: ExpenseFormPr
                   <FormLabel>Category</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger data-testid="select-category">
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                     </FormControl>
@@ -183,6 +194,7 @@ export function ExpenseForm({ open, onOpenChange, expenseToEdit }: ExpenseFormPr
                             "w-full pl-3 text-left font-normal",
                             !field.value && "text-muted-foreground"
                           )}
+                          data-testid="button-date-picker"
                         >
                           {field.value ? (
                             format(field.value, "PPP")
@@ -210,7 +222,12 @@ export function ExpenseForm({ open, onOpenChange, expenseToEdit }: ExpenseFormPr
               )}
             />
 
-            <Button type="submit" className="w-full mt-4" disabled={isPending}>
+            <Button 
+              type="submit" 
+              className="w-full mt-4" 
+              disabled={isPending}
+              data-testid="button-submit-expense"
+            >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEditing ? "Save Changes" : "Add Transaction"}
             </Button>

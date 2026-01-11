@@ -1,11 +1,20 @@
 import { Link, useLocation } from "wouter";
 import { LayoutDashboard, Receipt, LogOut, WalletCards } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useCurrency, CURRENCIES, type CurrencyCode } from "@/hooks/use-currency";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { currency, setCurrency } = useCurrency();
 
   const links = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -47,6 +56,35 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-border/50">
+        <div className="mb-4">
+          <p className="text-xs text-muted-foreground mb-2 px-1">Currency</p>
+          <Select 
+            value={currency.code} 
+            onValueChange={(value) => setCurrency(value as CurrencyCode)}
+          >
+            <SelectTrigger 
+              className="w-full" 
+              data-testid="select-currency"
+            >
+              <SelectValue placeholder="Select currency" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(CURRENCIES).map((curr) => (
+                <SelectItem 
+                  key={curr.code} 
+                  value={curr.code}
+                  data-testid={`currency-option-${curr.code}`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono">{curr.symbol}</span>
+                    <span>{curr.name}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="bg-muted/50 rounded-xl p-4 mb-4">
           <p className="text-sm font-medium">{user?.firstName || "User"}</p>
           <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
@@ -55,6 +93,7 @@ export function Sidebar() {
           variant="outline" 
           className="w-full justify-start gap-3 hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20 transition-colors"
           onClick={() => logout()}
+          data-testid="button-logout"
         >
           <LogOut className="w-4 h-4" />
           Sign Out
