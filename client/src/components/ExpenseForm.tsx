@@ -52,6 +52,7 @@ const CATEGORIES = [
   "Entertainment",
   "Healthcare",
   "Shopping",
+  "Electronic Devices",
   "Education",
   "Personal Care",
   "Travel",
