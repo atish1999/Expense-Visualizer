@@ -26,8 +26,9 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
 }));
 
 // === BASE SCHEMAS ===
-export const insertExpenseSchema = createInsertSchema(expenses)
-  .omit({ id: true, userId: true });
+export const insertExpenseSchema = createInsertSchema(expenses, {
+  date: z.coerce.date(),
+}).omit({ id: true, userId: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 export type Expense = typeof expenses.$inferSelect;
