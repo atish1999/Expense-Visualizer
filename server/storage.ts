@@ -3,7 +3,7 @@ import { eq, desc, and, sql, gte, lte, between } from "drizzle-orm";
 import {
   expenses,
   type Expense,
-  type InsertExpense,
+  type FullInsertExpense,
   type UpdateExpenseRequest,
   type StatsResponse,
   type CategoryStat,
@@ -19,7 +19,7 @@ export interface IStorage {
   // Expenses
   getExpenses(userId: string): Promise<Expense[]>;
   getExpense(id: number): Promise<Expense | undefined>;
-  createExpense(expense: InsertExpense): Promise<Expense>;
+  createExpense(expense: FullInsertExpense): Promise<Expense>;
   updateExpense(id: number, updates: UpdateExpenseRequest): Promise<Expense>;
   deleteExpense(id: number): Promise<void>;
   getStats(userId: string): Promise<StatsResponse>;
@@ -39,7 +39,7 @@ export class DatabaseStorage implements IStorage {
     return expense;
   }
 
-  async createExpense(insertExpense: InsertExpense): Promise<Expense> {
+  async createExpense(insertExpense: FullInsertExpense): Promise<Expense> {
     const [expense] = await db.insert(expenses).values(insertExpense).returning();
     return expense;
   }
@@ -196,7 +196,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Calculate category trends
-    const categories = [...new Set(currentExpenses.map(e => e.category))];
+    const categories = Array.from(new Set(currentExpenses.map(e => e.category)));
     const categoryTrends: CategoryTrend[] = [];
 
     for (const category of categories) {

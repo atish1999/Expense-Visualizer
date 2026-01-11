@@ -30,9 +30,15 @@ export const insertExpenseSchema = createInsertSchema(expenses, {
   date: z.coerce.date(),
 }).omit({ id: true, userId: true });
 
+// Full insert schema including userId (for internal use)
+export const fullInsertExpenseSchema = createInsertSchema(expenses, {
+  date: z.coerce.date(),
+}).omit({ id: true });
+
 // === EXPLICIT API CONTRACT TYPES ===
 export type Expense = typeof expenses.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+export type FullInsertExpense = z.infer<typeof fullInsertExpenseSchema>;
 
 // Request types
 export type CreateExpenseRequest = InsertExpense;
