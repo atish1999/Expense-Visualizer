@@ -2,7 +2,7 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { storage } from "./storage";
-import { api } from "@shared/routes";
+import { api, insightsQuerySchema } from "@shared/routes";
 import { z } from "zod";
 
 // Helper to ensure user is authenticated and attach user to request if needed
@@ -116,6 +116,20 @@ export async function registerRoutes(
     const userId = (req.user as any).claims.sub;
     const stats = await storage.getStats(userId);
     res.json(stats);
+  });
+
+  app.get(api.insights.get.path, requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const query = insightsQuerySchema.parse(req.query);
+      const insights = await storage.getInsights(userId, query);
+      res.json(insights);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      throw err;
+    }
   });
 
   // Seed Data function (Optional: only seed if user has no data?)

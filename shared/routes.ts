@@ -14,6 +14,14 @@ export const errorSchemas = {
   }),
 };
 
+export const insightsQuerySchema = z.object({
+  granularity: z.enum(['month', 'quarter', 'year']).default('month'),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+export type InsightsQuery = z.infer<typeof insightsQuerySchema>;
+
 export const api = {
   expenses: {
     list: {
@@ -75,6 +83,16 @@ export const api = {
             total: z.number(),
           })),
         }),
+      },
+    },
+  },
+  insights: {
+    get: {
+      method: 'GET' as const,
+      path: '/api/insights',
+      query: insightsQuerySchema,
+      responses: {
+        200: z.custom<import('./schema').InsightsResponse>(),
       },
     },
   },

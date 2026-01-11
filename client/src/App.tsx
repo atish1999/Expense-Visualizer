@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import ExpensesList from "@/pages/ExpensesList";
+import Insights from "@/pages/Insights";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/expenses" component={ExpensesList} />
+      <Route path="/insights" component={Insights} />
       <Route component={NotFound} />
     </Switch>
   );

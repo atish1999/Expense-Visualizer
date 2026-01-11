@@ -56,3 +56,46 @@ export interface StatsResponse {
   byCategory: CategoryStat[];
   monthly: MonthlyStat[];
 }
+
+// Insights Types
+export interface PeriodBucket {
+  label: string; // e.g., "Jan 2026", "Q1 2026"
+  startDate: string;
+  endDate: string;
+  total: number;
+}
+
+export interface CategoryTrend {
+  category: string;
+  currentTotal: number;
+  previousTotal: number;
+  change: number; // absolute change
+  changePercent: number; // percentage change
+  trend: "up" | "down" | "stable";
+  periodData: { period: string; total: number }[];
+}
+
+export interface FinancialPattern {
+  avgMonthlySpend: number;
+  highestSpendCategory: string;
+  highestSpendAmount: number;
+  lowestSpendCategory: string;
+  lowestSpendAmount: number;
+  spendingTrend: "increasing" | "decreasing" | "stable";
+  spendingTrendPercent: number;
+  topGrowingCategory: string | null;
+  topGrowingPercent: number;
+  topShrinkingCategory: string | null;
+  topShrinkingPercent: number;
+}
+
+export interface InsightsResponse {
+  periodBuckets: PeriodBucket[];
+  categoryTrends: CategoryTrend[];
+  totalCurrentPeriod: number;
+  totalPreviousPeriod: number;
+  overallChange: number;
+  overallChangePercent: number;
+  overallTrend: "up" | "down" | "stable";
+  financialPattern: FinancialPattern;
+}
