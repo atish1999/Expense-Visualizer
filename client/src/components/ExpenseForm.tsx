@@ -53,6 +53,7 @@ const CATEGORIES = [
   "Healthcare",
   "Shopping",
   "Electronic Devices",
+  "Subscription",
   "Education",
   "Personal Care",
   "Travel",
