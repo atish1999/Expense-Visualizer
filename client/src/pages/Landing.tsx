@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, PieChart, ShieldCheck, Wallet } from "lucide-react";
-import { Link } from "wouter";
 
 export default function Landing() {
   return (
@@ -15,11 +14,11 @@ export default function Landing() {
             <span className="font-display font-bold text-xl tracking-tight">FinTrack</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" asChild>
-              <Link href="/api/login">Log in</Link>
+            <Button variant="ghost" asChild data-testid="button-login">
+              <a href="/api/login">Log in</a>
             </Button>
-            <Button asChild className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-              <Link href="/api/login">Get Started <ArrowRight className="ml-2 w-4 h-4" /></Link>
+            <Button asChild className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" data-testid="button-get-started">
+              <a href="/api/login">Get Started <ArrowRight className="ml-2 w-4 h-4" /></a>
             </Button>
           </div>
         </div>
@@ -46,11 +45,11 @@ export default function Landing() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="h-12 px-8 text-lg rounded-xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-1" asChild>
-              <Link href="/api/login">Start Tracking Free</Link>
+            <Button size="lg" className="h-12 px-8 text-lg rounded-xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-1" asChild data-testid="button-start-tracking">
+              <a href="/api/login">Start Tracking Free</a>
             </Button>
             <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-xl border-2 hover:bg-muted/50" asChild>
-              <Link href="#features">Learn More</Link>
+              <a href="#features">Learn More</a>
             </Button>
           </div>
         </section>
