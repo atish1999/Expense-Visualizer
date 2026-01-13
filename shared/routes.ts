@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertExpenseSchema, expenses } from './schema';
+import { insertExpenseSchema, insertBillReminderSchema, expenses, billReminders } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -93,6 +93,57 @@ export const api = {
       query: insightsQuerySchema,
       responses: {
         200: z.custom<import('./schema').InsightsResponse>(),
+      },
+    },
+  },
+  billReminders: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/bill-reminders',
+      responses: {
+        200: z.array(z.custom<typeof billReminders.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/bill-reminders/:id',
+      responses: {
+        200: z.custom<typeof billReminders.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/bill-reminders',
+      input: insertBillReminderSchema,
+      responses: {
+        201: z.custom<typeof billReminders.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/bill-reminders/:id',
+      input: insertBillReminderSchema.partial(),
+      responses: {
+        200: z.custom<typeof billReminders.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/bill-reminders/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+    upcoming: {
+      method: 'GET' as const,
+      path: '/api/bill-reminders/upcoming',
+      responses: {
+        200: z.array(z.custom<typeof billReminders.$inferSelect>()),
       },
     },
   },

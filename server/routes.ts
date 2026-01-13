@@ -132,10 +132,99 @@ export async function registerRoutes(
     }
   });
 
-  // Seed Data function (Optional: only seed if user has no data?)
-  // For multi-tenant auth apps, seeding is tricky. 
-  // Maybe just don't seed for now, or seed on first login if empty.
-  // Skipping auto-seed to avoid cluttering real user data.
+  // Bill Reminders Routes
+  app.get(api.billReminders.upcoming.path, requireAuth, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const daysAhead = Number(req.query.days) || 7;
+    const upcoming = await storage.getUpcomingBills(userId, daysAhead);
+    res.json(upcoming);
+  });
+
+  app.get(api.billReminders.list.path, requireAuth, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const reminders = await storage.getBillReminders(userId);
+    res.json(reminders);
+  });
+
+  app.get(api.billReminders.get.path, requireAuth, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const reminder = await storage.getBillReminder(Number(req.params.id));
+    
+    if (!reminder) {
+      return res.status(404).json({ message: 'Bill reminder not found' });
+    }
+    
+    if (reminder.userId !== userId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    res.json(reminder);
+  });
+
+  app.post(api.billReminders.create.path, requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const inputData = { ...req.body, userId };
+      const schemaWithUser = api.billReminders.create.input.extend({
+        userId: z.string(),
+      });
+      
+      const input = schemaWithUser.parse(inputData);
+      const reminder = await storage.createBillReminder(input);
+      res.status(201).json(reminder);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.put(api.billReminders.update.path, requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const id = Number(req.params.id);
+      
+      const existing = await storage.getBillReminder(id);
+      if (!existing) {
+        return res.status(404).json({ message: 'Bill reminder not found' });
+      }
+      if (existing.userId !== userId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      const input = api.billReminders.update.input.parse(req.body);
+      const updated = await storage.updateBillReminder(id, input);
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.billReminders.delete.path, requireAuth, async (req, res) => {
+    const userId = (req.user as any).claims.sub;
+    const id = Number(req.params.id);
+
+    const existing = await storage.getBillReminder(id);
+    if (!existing) {
+      return res.status(404).json({ message: 'Bill reminder not found' });
+    }
+    if (existing.userId !== userId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    await storage.deleteBillReminder(id);
+    res.status(204).send();
+  });
 
   return httpServer;
 }
