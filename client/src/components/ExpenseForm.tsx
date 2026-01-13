@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertExpenseSchema, type Expense, type InsertExpense } from "@shared/schema";
 import { useCreateExpense, useUpdateExpense } from "@/hooks/use-expenses";
@@ -71,12 +72,32 @@ export function ExpenseForm({ open, onOpenChange, expenseToEdit }: ExpenseFormPr
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: expenseToEdit ? expenseToEdit.amount / 100 : 0,
-      description: expenseToEdit?.description || "",
-      category: expenseToEdit?.category || "Other",
-      date: expenseToEdit?.date ? new Date(expenseToEdit.date) : new Date(),
+      amount: 0,
+      description: "",
+      category: "Other",
+      date: new Date(),
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      if (expenseToEdit) {
+        form.reset({
+          amount: expenseToEdit.amount / 100,
+          description: expenseToEdit.description,
+          category: expenseToEdit.category,
+          date: new Date(expenseToEdit.date),
+        });
+      } else {
+        form.reset({
+          amount: 0,
+          description: "",
+          category: "Other",
+          date: new Date(),
+        });
+      }
+    }
+  }, [open, expenseToEdit, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const payload = {
