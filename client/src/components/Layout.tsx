@@ -10,7 +10,7 @@ export function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="flex h-screen w-full">
         <AppSidebar />
-        <SidebarInset className="flex flex-col flex-1 overflow-hidden">
+        <SidebarInset className="flex flex-col flex-1 overflow-hidden bg-background">
           <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 md:hidden">
             <SidebarTrigger className="-ml-1" data-testid="button-sidebar-toggle" />
             <span className="font-display font-bold text-lg">FinTrack</span>
