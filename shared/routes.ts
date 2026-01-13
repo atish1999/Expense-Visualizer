@@ -1,5 +1,22 @@
 import { z } from 'zod';
-import { insertExpenseSchema, insertBillReminderSchema, expenses, billReminders } from './schema';
+import { 
+  insertExpenseSchema, 
+  insertBillReminderSchema, 
+  insertBudgetSchema,
+  insertRecurringTransactionSchema,
+  insertSavingsGoalSchema,
+  insertSavingsChallengeSchema,
+  insertCustomCategorySchema,
+  insertCategoryRuleSchema,
+  expenses, 
+  billReminders,
+  budgets,
+  recurringTransactions,
+  savingsGoals,
+  savingsChallenges,
+  customCategories,
+  categoryRules,
+} from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -144,6 +161,287 @@ export const api = {
       path: '/api/bill-reminders/upcoming',
       responses: {
         200: z.array(z.custom<typeof billReminders.$inferSelect>()),
+      },
+    },
+  },
+  budgets: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/budgets',
+      responses: {
+        200: z.array(z.custom<typeof budgets.$inferSelect>()),
+      },
+    },
+    withSpending: {
+      method: 'GET' as const,
+      path: '/api/budgets/with-spending',
+      responses: {
+        200: z.array(z.custom<import('./schema').BudgetWithSpending>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/budgets/:id',
+      responses: {
+        200: z.custom<typeof budgets.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/budgets',
+      input: insertBudgetSchema,
+      responses: {
+        201: z.custom<typeof budgets.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/budgets/:id',
+      input: insertBudgetSchema.partial(),
+      responses: {
+        200: z.custom<typeof budgets.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/budgets/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  recurringTransactions: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/recurring-transactions',
+      responses: {
+        200: z.array(z.custom<typeof recurringTransactions.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/recurring-transactions/:id',
+      responses: {
+        200: z.custom<typeof recurringTransactions.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/recurring-transactions',
+      input: insertRecurringTransactionSchema,
+      responses: {
+        201: z.custom<typeof recurringTransactions.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/recurring-transactions/:id',
+      input: insertRecurringTransactionSchema.partial(),
+      responses: {
+        200: z.custom<typeof recurringTransactions.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/recurring-transactions/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  savingsGoals: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/savings-goals',
+      responses: {
+        200: z.array(z.custom<typeof savingsGoals.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/savings-goals/:id',
+      responses: {
+        200: z.custom<typeof savingsGoals.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/savings-goals',
+      input: insertSavingsGoalSchema,
+      responses: {
+        201: z.custom<typeof savingsGoals.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/savings-goals/:id',
+      input: insertSavingsGoalSchema.partial().extend({ currentAmount: z.number().optional(), isCompleted: z.boolean().optional() }),
+      responses: {
+        200: z.custom<typeof savingsGoals.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/savings-goals/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  savingsChallenges: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/savings-challenges',
+      responses: {
+        200: z.array(z.custom<typeof savingsChallenges.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/savings-challenges/:id',
+      responses: {
+        200: z.custom<typeof savingsChallenges.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/savings-challenges',
+      input: insertSavingsChallengeSchema,
+      responses: {
+        201: z.custom<typeof savingsChallenges.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/savings-challenges/:id',
+      input: insertSavingsChallengeSchema.partial().extend({ currentAmount: z.number().optional(), progress: z.string().optional(), isCompleted: z.boolean().optional() }),
+      responses: {
+        200: z.custom<typeof savingsChallenges.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/savings-challenges/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  customCategories: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/custom-categories',
+      responses: {
+        200: z.array(z.custom<typeof customCategories.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/custom-categories',
+      input: insertCustomCategorySchema,
+      responses: {
+        201: z.custom<typeof customCategories.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/custom-categories/:id',
+      input: insertCustomCategorySchema.partial(),
+      responses: {
+        200: z.custom<typeof customCategories.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/custom-categories/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  categoryRules: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/category-rules',
+      responses: {
+        200: z.array(z.custom<typeof categoryRules.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/category-rules',
+      input: insertCategoryRuleSchema,
+      responses: {
+        201: z.custom<typeof categoryRules.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/category-rules/:id',
+      input: insertCategoryRuleSchema.partial(),
+      responses: {
+        200: z.custom<typeof categoryRules.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/category-rules/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+    match: {
+      method: 'POST' as const,
+      path: '/api/category-rules/match',
+      input: z.object({ description: z.string() }),
+      responses: {
+        200: z.object({ category: z.string().nullable() }),
+      },
+    },
+  },
+  financialHealth: {
+    get: {
+      method: 'GET' as const,
+      path: '/api/financial-health',
+      responses: {
+        200: z.custom<import('./schema').FinancialHealthScore>(),
+      },
+    },
+  },
+  export: {
+    csv: {
+      method: 'GET' as const,
+      path: '/api/export/csv',
+      responses: {
+        200: z.string(),
       },
     },
   },

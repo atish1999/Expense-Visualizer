@@ -12,6 +12,10 @@ import Dashboard from "@/pages/Dashboard";
 import ExpensesList from "@/pages/ExpensesList";
 import BillReminders from "@/pages/BillReminders";
 import Insights from "@/pages/Insights";
+import Budgets from "@/pages/Budgets";
+import Savings from "@/pages/Savings";
+import Recurring from "@/pages/Recurring";
+import SettingsPage from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -38,8 +42,12 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/expenses" component={ExpensesList} />
+      <Route path="/budgets" component={Budgets} />
       <Route path="/bills" component={BillReminders} />
+      <Route path="/recurring" component={Recurring} />
+      <Route path="/savings" component={Savings} />
       <Route path="/insights" component={Insights} />
+      <Route path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
     </Switch>
   );

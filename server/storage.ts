@@ -3,12 +3,31 @@ import { eq, desc, and, sql, gte, lte, between, asc } from "drizzle-orm";
 import {
   expenses,
   billReminders,
+  budgets,
+  recurringTransactions,
+  savingsGoals,
+  savingsChallenges,
+  customCategories,
+  categoryRules,
   type Expense,
   type FullInsertExpense,
   type UpdateExpenseRequest,
   type BillReminder,
   type FullInsertBillReminder,
   type UpdateBillReminderRequest,
+  type Budget,
+  type InsertBudget,
+  type BudgetWithSpending,
+  type RecurringTransaction,
+  type InsertRecurringTransaction,
+  type SavingsGoal,
+  type InsertSavingsGoal,
+  type SavingsChallenge,
+  type InsertSavingsChallenge,
+  type CustomCategory,
+  type InsertCustomCategory,
+  type CategoryRule,
+  type InsertCategoryRule,
   type StatsResponse,
   type CategoryStat,
   type MonthlyStat,
@@ -16,6 +35,7 @@ import {
   type PeriodBucket,
   type CategoryTrend,
   type FinancialPattern,
+  type FinancialHealthScore,
 } from "@shared/schema";
 import { type InsightsQuery } from "@shared/routes";
 
@@ -36,6 +56,51 @@ export interface IStorage {
   updateBillReminder(id: number, updates: UpdateBillReminderRequest): Promise<BillReminder>;
   deleteBillReminder(id: number): Promise<void>;
   getUpcomingBills(userId: string, daysAhead: number): Promise<BillReminder[]>;
+
+  // Budgets
+  getBudgets(userId: string): Promise<Budget[]>;
+  getBudgetsWithSpending(userId: string): Promise<BudgetWithSpending[]>;
+  getBudget(id: number): Promise<Budget | undefined>;
+  createBudget(budget: InsertBudget & { userId: string }): Promise<Budget>;
+  updateBudget(id: number, updates: Partial<InsertBudget>): Promise<Budget>;
+  deleteBudget(id: number): Promise<void>;
+
+  // Recurring Transactions
+  getRecurringTransactions(userId: string): Promise<RecurringTransaction[]>;
+  getRecurringTransaction(id: number): Promise<RecurringTransaction | undefined>;
+  createRecurringTransaction(tx: InsertRecurringTransaction & { userId: string }): Promise<RecurringTransaction>;
+  updateRecurringTransaction(id: number, updates: Partial<InsertRecurringTransaction>): Promise<RecurringTransaction>;
+  deleteRecurringTransaction(id: number): Promise<void>;
+
+  // Savings Goals
+  getSavingsGoals(userId: string): Promise<SavingsGoal[]>;
+  getSavingsGoal(id: number): Promise<SavingsGoal | undefined>;
+  createSavingsGoal(goal: InsertSavingsGoal & { userId: string }): Promise<SavingsGoal>;
+  updateSavingsGoal(id: number, updates: Partial<InsertSavingsGoal & { currentAmount?: number; isCompleted?: boolean }>): Promise<SavingsGoal>;
+  deleteSavingsGoal(id: number): Promise<void>;
+
+  // Savings Challenges
+  getSavingsChallenges(userId: string): Promise<SavingsChallenge[]>;
+  getSavingsChallenge(id: number): Promise<SavingsChallenge | undefined>;
+  createSavingsChallenge(challenge: InsertSavingsChallenge & { userId: string }): Promise<SavingsChallenge>;
+  updateSavingsChallenge(id: number, updates: Partial<InsertSavingsChallenge & { currentAmount?: number; progress?: string; isCompleted?: boolean }>): Promise<SavingsChallenge>;
+  deleteSavingsChallenge(id: number): Promise<void>;
+
+  // Custom Categories
+  getCustomCategories(userId: string): Promise<CustomCategory[]>;
+  createCustomCategory(category: InsertCustomCategory & { userId: string }): Promise<CustomCategory>;
+  updateCustomCategory(id: number, updates: Partial<InsertCustomCategory>): Promise<CustomCategory>;
+  deleteCustomCategory(id: number): Promise<void>;
+
+  // Category Rules
+  getCategoryRules(userId: string): Promise<CategoryRule[]>;
+  createCategoryRule(rule: InsertCategoryRule & { userId: string }): Promise<CategoryRule>;
+  updateCategoryRule(id: number, updates: Partial<InsertCategoryRule>): Promise<CategoryRule>;
+  deleteCategoryRule(id: number): Promise<void>;
+  matchCategory(userId: string, description: string): Promise<string | null>;
+
+  // Financial Health Score
+  getFinancialHealthScore(userId: string): Promise<FinancialHealthScore>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -377,6 +442,330 @@ export class DatabaseStorage implements IStorage {
         lte(billReminders.dueDate, futureDate.toISOString().split('T')[0])
       ))
       .orderBy(asc(billReminders.dueDate));
+  }
+
+  // Budget methods
+  async getBudgets(userId: string): Promise<Budget[]> {
+    return await db.select()
+      .from(budgets)
+      .where(eq(budgets.userId, userId))
+      .orderBy(asc(budgets.category));
+  }
+
+  async getBudgetsWithSpending(userId: string): Promise<BudgetWithSpending[]> {
+    const userBudgets = await this.getBudgets(userId);
+    const now = new Date();
+    
+    // Get current month's expenses
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    
+    const monthlyExpenses = await db.select({
+      category: expenses.category,
+      total: sql<number>`sum(${expenses.amount})`
+    })
+    .from(expenses)
+    .where(and(
+      eq(expenses.userId, userId),
+      gte(expenses.date, startOfMonth),
+      lte(expenses.date, endOfMonth)
+    ))
+    .groupBy(expenses.category);
+
+    const spendingByCategory = new Map(monthlyExpenses.map(e => [e.category, Number(e.total)]));
+
+    return userBudgets.map(budget => {
+      const spent = spendingByCategory.get(budget.category) || 0;
+      const remaining = Math.max(0, budget.amount - spent);
+      const percentUsed = budget.amount > 0 ? Math.round((spent / budget.amount) * 100) : 0;
+      return { ...budget, spent, remaining, percentUsed };
+    });
+  }
+
+  async getBudget(id: number): Promise<Budget | undefined> {
+    const [budget] = await db.select().from(budgets).where(eq(budgets.id, id));
+    return budget;
+  }
+
+  async createBudget(budget: InsertBudget & { userId: string }): Promise<Budget> {
+    const [created] = await db.insert(budgets).values(budget).returning();
+    return created;
+  }
+
+  async updateBudget(id: number, updates: Partial<InsertBudget>): Promise<Budget> {
+    const [updated] = await db.update(budgets)
+      .set(updates)
+      .where(eq(budgets.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteBudget(id: number): Promise<void> {
+    await db.delete(budgets).where(eq(budgets.id, id));
+  }
+
+  // Recurring Transaction methods
+  async getRecurringTransactions(userId: string): Promise<RecurringTransaction[]> {
+    return await db.select()
+      .from(recurringTransactions)
+      .where(eq(recurringTransactions.userId, userId))
+      .orderBy(desc(recurringTransactions.createdAt));
+  }
+
+  async getRecurringTransaction(id: number): Promise<RecurringTransaction | undefined> {
+    const [tx] = await db.select().from(recurringTransactions).where(eq(recurringTransactions.id, id));
+    return tx;
+  }
+
+  async createRecurringTransaction(tx: InsertRecurringTransaction & { userId: string }): Promise<RecurringTransaction> {
+    const [created] = await db.insert(recurringTransactions).values(tx).returning();
+    return created;
+  }
+
+  async updateRecurringTransaction(id: number, updates: Partial<InsertRecurringTransaction>): Promise<RecurringTransaction> {
+    const [updated] = await db.update(recurringTransactions)
+      .set(updates)
+      .where(eq(recurringTransactions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteRecurringTransaction(id: number): Promise<void> {
+    await db.delete(recurringTransactions).where(eq(recurringTransactions.id, id));
+  }
+
+  // Savings Goal methods
+  async getSavingsGoals(userId: string): Promise<SavingsGoal[]> {
+    return await db.select()
+      .from(savingsGoals)
+      .where(eq(savingsGoals.userId, userId))
+      .orderBy(desc(savingsGoals.createdAt));
+  }
+
+  async getSavingsGoal(id: number): Promise<SavingsGoal | undefined> {
+    const [goal] = await db.select().from(savingsGoals).where(eq(savingsGoals.id, id));
+    return goal;
+  }
+
+  async createSavingsGoal(goal: InsertSavingsGoal & { userId: string }): Promise<SavingsGoal> {
+    const [created] = await db.insert(savingsGoals).values(goal).returning();
+    return created;
+  }
+
+  async updateSavingsGoal(id: number, updates: Partial<InsertSavingsGoal & { currentAmount?: number; isCompleted?: boolean }>): Promise<SavingsGoal> {
+    const [updated] = await db.update(savingsGoals)
+      .set(updates)
+      .where(eq(savingsGoals.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSavingsGoal(id: number): Promise<void> {
+    await db.delete(savingsGoals).where(eq(savingsGoals.id, id));
+  }
+
+  // Savings Challenge methods
+  async getSavingsChallenges(userId: string): Promise<SavingsChallenge[]> {
+    return await db.select()
+      .from(savingsChallenges)
+      .where(eq(savingsChallenges.userId, userId))
+      .orderBy(desc(savingsChallenges.createdAt));
+  }
+
+  async getSavingsChallenge(id: number): Promise<SavingsChallenge | undefined> {
+    const [challenge] = await db.select().from(savingsChallenges).where(eq(savingsChallenges.id, id));
+    return challenge;
+  }
+
+  async createSavingsChallenge(challenge: InsertSavingsChallenge & { userId: string }): Promise<SavingsChallenge> {
+    const [created] = await db.insert(savingsChallenges).values(challenge).returning();
+    return created;
+  }
+
+  async updateSavingsChallenge(id: number, updates: Partial<InsertSavingsChallenge & { currentAmount?: number; progress?: string; isCompleted?: boolean }>): Promise<SavingsChallenge> {
+    const [updated] = await db.update(savingsChallenges)
+      .set(updates)
+      .where(eq(savingsChallenges.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSavingsChallenge(id: number): Promise<void> {
+    await db.delete(savingsChallenges).where(eq(savingsChallenges.id, id));
+  }
+
+  // Custom Category methods
+  async getCustomCategories(userId: string): Promise<CustomCategory[]> {
+    return await db.select()
+      .from(customCategories)
+      .where(eq(customCategories.userId, userId))
+      .orderBy(asc(customCategories.name));
+  }
+
+  async createCustomCategory(category: InsertCustomCategory & { userId: string }): Promise<CustomCategory> {
+    const [created] = await db.insert(customCategories).values(category).returning();
+    return created;
+  }
+
+  async updateCustomCategory(id: number, updates: Partial<InsertCustomCategory>): Promise<CustomCategory> {
+    const [updated] = await db.update(customCategories)
+      .set(updates)
+      .where(eq(customCategories.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCustomCategory(id: number): Promise<void> {
+    await db.delete(customCategories).where(eq(customCategories.id, id));
+  }
+
+  // Category Rule methods
+  async getCategoryRules(userId: string): Promise<CategoryRule[]> {
+    return await db.select()
+      .from(categoryRules)
+      .where(eq(categoryRules.userId, userId))
+      .orderBy(desc(categoryRules.matchCount));
+  }
+
+  async createCategoryRule(rule: InsertCategoryRule & { userId: string }): Promise<CategoryRule> {
+    const [created] = await db.insert(categoryRules).values(rule).returning();
+    return created;
+  }
+
+  async updateCategoryRule(id: number, updates: Partial<InsertCategoryRule>): Promise<CategoryRule> {
+    const [updated] = await db.update(categoryRules)
+      .set(updates)
+      .where(eq(categoryRules.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteCategoryRule(id: number): Promise<void> {
+    await db.delete(categoryRules).where(eq(categoryRules.id, id));
+  }
+
+  async matchCategory(userId: string, description: string): Promise<string | null> {
+    const rules = await this.getCategoryRules(userId);
+    const lowerDesc = description.toLowerCase();
+    
+    for (const rule of rules) {
+      if (rule.isActive && lowerDesc.includes(rule.pattern.toLowerCase())) {
+        // Increment match count
+        await db.update(categoryRules)
+          .set({ matchCount: rule.matchCount + 1 })
+          .where(eq(categoryRules.id, rule.id));
+        return rule.category;
+      }
+    }
+    return null;
+  }
+
+  // Financial Health Score
+  async getFinancialHealthScore(userId: string): Promise<FinancialHealthScore> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    // Get this month's expenses
+    const monthlyExpenses = await db.select()
+      .from(expenses)
+      .where(and(
+        eq(expenses.userId, userId),
+        gte(expenses.date, startOfMonth),
+        lte(expenses.date, endOfMonth)
+      ));
+
+    const totalSpent = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    // Budget adherence
+    const budgetsWithSpending = await this.getBudgetsWithSpending(userId);
+    let budgetAdherence = 100;
+    if (budgetsWithSpending.length > 0) {
+      const underBudget = budgetsWithSpending.filter(b => b.percentUsed <= 100).length;
+      budgetAdherence = Math.round((underBudget / budgetsWithSpending.length) * 100);
+    }
+
+    // Savings rate (based on savings goals progress)
+    const goals = await this.getSavingsGoals(userId);
+    let savingsRate = 50; // default
+    if (goals.length > 0) {
+      const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0);
+      const totalSaved = goals.reduce((sum, g) => sum + g.currentAmount, 0);
+      savingsRate = totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 50;
+    }
+
+    // Spending consistency (compare to last month)
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    
+    const lastMonthExpenses = await db.select()
+      .from(expenses)
+      .where(and(
+        eq(expenses.userId, userId),
+        gte(expenses.date, lastMonthStart),
+        lte(expenses.date, lastMonthEnd)
+      ));
+    
+    const lastMonthTotal = lastMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+    let spendingConsistency = 80;
+    if (lastMonthTotal > 0) {
+      const variance = Math.abs(totalSpent - lastMonthTotal) / lastMonthTotal;
+      spendingConsistency = Math.max(0, Math.round(100 - (variance * 100)));
+    }
+
+    // Bill payment score
+    const bills = await this.getBillReminders(userId);
+    const overdueBills = bills.filter(b => {
+      const dueDate = new Date(b.dueDate);
+      return b.isActive && dueDate < now;
+    });
+    const billPaymentScore = bills.length > 0 
+      ? Math.round(((bills.length - overdueBills.length) / bills.length) * 100)
+      : 100;
+
+    // Calculate overall score
+    const overall = Math.round(
+      (budgetAdherence * 0.3) + 
+      (savingsRate * 0.25) + 
+      (spendingConsistency * 0.25) + 
+      (billPaymentScore * 0.2)
+    );
+
+    // Determine grade
+    let grade: "A" | "B" | "C" | "D" | "F";
+    if (overall >= 90) grade = "A";
+    else if (overall >= 80) grade = "B";
+    else if (overall >= 70) grade = "C";
+    else if (overall >= 60) grade = "D";
+    else grade = "F";
+
+    // Generate insights
+    const insights: string[] = [];
+    if (budgetAdherence < 80) {
+      insights.push("You're exceeding some budget limits. Consider reviewing your spending.");
+    }
+    if (savingsRate < 50) {
+      insights.push("Your savings progress could use a boost. Try setting smaller, achievable goals.");
+    }
+    if (spendingConsistency < 60) {
+      insights.push("Your spending varies significantly month to month. Building a routine can help.");
+    }
+    if (billPaymentScore < 100) {
+      insights.push("You have overdue bills. Staying on top of payments improves your score.");
+    }
+    if (overall >= 80) {
+      insights.push("Great job! You're managing your finances well.");
+    }
+
+    return {
+      overall,
+      budgetAdherence,
+      savingsRate,
+      spendingConsistency,
+      billPaymentScore,
+      grade,
+      insights,
+    };
   }
 }
 
