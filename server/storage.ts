@@ -1,10 +1,14 @@
 import { db } from "./db";
-import { eq, desc, and, sql, gte, lte, between } from "drizzle-orm";
+import { eq, desc, and, sql, gte, lte, between, asc } from "drizzle-orm";
 import {
   expenses,
+  billReminders,
   type Expense,
   type FullInsertExpense,
   type UpdateExpenseRequest,
+  type BillReminder,
+  type FullInsertBillReminder,
+  type UpdateBillReminderRequest,
   type StatsResponse,
   type CategoryStat,
   type MonthlyStat,
@@ -24,6 +28,14 @@ export interface IStorage {
   deleteExpense(id: number): Promise<void>;
   getStats(userId: string): Promise<StatsResponse>;
   getInsights(userId: string, query: InsightsQuery): Promise<InsightsResponse>;
+  
+  // Bill Reminders
+  getBillReminders(userId: string): Promise<BillReminder[]>;
+  getBillReminder(id: number): Promise<BillReminder | undefined>;
+  createBillReminder(reminder: FullInsertBillReminder): Promise<BillReminder>;
+  updateBillReminder(id: number, updates: UpdateBillReminderRequest): Promise<BillReminder>;
+  deleteBillReminder(id: number): Promise<void>;
+  getUpcomingBills(userId: string, daysAhead: number): Promise<BillReminder[]>;
 }
 
 export class DatabaseStorage implements IStorage {
