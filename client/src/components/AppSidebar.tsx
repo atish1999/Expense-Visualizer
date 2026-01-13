@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Receipt, LogOut, WalletCards, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Receipt, LogOut, WalletCards, BarChart3, Bell } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrency, CURRENCIES, type CurrencyCode } from "@/hooks/use-currency";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ export function AppSidebar() {
   const links = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
     { href: "/expenses", label: "Transactions", icon: Receipt },
+    { href: "/bills", label: "Bill Reminders", icon: Bell },
     { href: "/insights", label: "Insights", icon: BarChart3 },
   ];
 
