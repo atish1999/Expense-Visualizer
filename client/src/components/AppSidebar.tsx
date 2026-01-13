@@ -10,11 +10,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
-export function Sidebar() {
+export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const { currency, setCurrency } = useCurrency();
+  const { setOpenMobile } = useSidebar();
 
   const links = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -22,41 +35,52 @@ export function Sidebar() {
     { href: "/insights", label: "Insights", icon: BarChart3 },
   ];
 
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  };
+
   return (
-    <div className="w-64 bg-card border-r border-border h-screen flex flex-col fixed left-0 top-0">
-      <div className="p-8 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-emerald-300 flex items-center justify-center shadow-lg shadow-primary/20">
-          <WalletCards className="text-white w-6 h-6" />
+    <Sidebar>
+      <SidebarHeader className="p-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-emerald-300 flex items-center justify-center shadow-lg shadow-primary/20">
+            <WalletCards className="text-white w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="font-display font-bold text-xl tracking-tight">FinTrack</h1>
+            <p className="text-xs text-muted-foreground">Personal Finance</p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-display font-bold text-xl tracking-tight">FinTrack</h1>
-          <p className="text-xs text-muted-foreground">Personal Finance</p>
-        </div>
-      </div>
+      </SidebarHeader>
 
-      <nav className="flex-1 px-4 py-4 space-y-2">
-        {links.map((link) => {
-          const Icon = link.icon;
-          const isActive = location === link.href;
-          return (
-            <Link key={link.href} href={link.href}>
-              <div
-                className={`
-                  flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200
-                  ${isActive 
-                    ? "bg-primary/10 text-primary font-medium shadow-sm" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"}
-                `}
-              >
-                <Icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                {link.label}
-              </div>
-            </Link>
-          );
-        })}
-      </nav>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {links.map((link) => {
+                const Icon = link.icon;
+                const isActive = location === link.href;
+                return (
+                  <SidebarMenuItem key={link.href}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive}
+                      data-testid={`link-${link.label.toLowerCase()}`}
+                    >
+                      <Link href={link.href} onClick={handleLinkClick}>
+                        <Icon className="w-5 h-5" />
+                        <span>{link.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
-      <div className="p-4 border-t border-border/50">
+      <SidebarFooter className="p-4 border-t border-border/50">
         <div className="mb-4">
           <p className="text-xs text-muted-foreground mb-2 px-1">Currency</p>
           <Select 
@@ -87,8 +111,8 @@ export function Sidebar() {
         </div>
 
         <div className="bg-muted/50 rounded-xl p-4 mb-4">
-          <p className="text-sm font-medium">{user?.firstName || "User"}</p>
-          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          <p className="text-sm font-medium" data-testid="text-username">{user?.firstName || "User"}</p>
+          <p className="text-xs text-muted-foreground truncate" data-testid="text-email">{user?.email}</p>
         </div>
         <Button 
           variant="outline" 
@@ -99,7 +123,7 @@ export function Sidebar() {
           <LogOut className="w-4 h-4" />
           Sign Out
         </Button>
-      </div>
-    </div>
+      </SidebarFooter>
+    </Sidebar>
   );
 }

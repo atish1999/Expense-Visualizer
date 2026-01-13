@@ -19,7 +19,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
     : { category: "N/A", total: 0 };
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       <Card className="shadow-sm border-border/50 hover:shadow-md transition-shadow duration-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">

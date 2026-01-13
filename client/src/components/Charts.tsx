@@ -46,8 +46,8 @@ export function Charts({ stats }: ChartsProps) {
   })).sort((a, b) => b.value - a.value);
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-      <Card className="col-span-4 shadow-sm border-border/50">
+    <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
+      <Card className="lg:col-span-4 shadow-sm border-border/50">
         <CardHeader>
           <CardTitle>Spending Trends</CardTitle>
         </CardHeader>
@@ -94,7 +94,7 @@ export function Charts({ stats }: ChartsProps) {
         </CardContent>
       </Card>
 
-      <Card className="col-span-3 shadow-sm border-border/50">
+      <Card className="lg:col-span-3 shadow-sm border-border/50">
         <CardHeader>
           <CardTitle>Category Breakdown</CardTitle>
         </CardHeader>
