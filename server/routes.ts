@@ -150,12 +150,8 @@ export async function registerRoutes(
     const userId = (req.user as any).claims.sub;
     const reminder = await storage.getBillReminder(Number(req.params.id));
     
-    if (!reminder) {
+    if (!reminder || reminder.userId !== userId) {
       return res.status(404).json({ message: 'Bill reminder not found' });
-    }
-    
-    if (reminder.userId !== userId) {
-      return res.status(403).json({ message: 'Forbidden' });
     }
 
     res.json(reminder);

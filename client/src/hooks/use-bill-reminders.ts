@@ -10,12 +10,7 @@ export function useBillReminders() {
 
 export function useUpcomingBills(daysAhead: number = 7) {
   return useQuery<BillReminder[]>({
-    queryKey: ["/api/bill-reminders/upcoming", daysAhead],
-    queryFn: async () => {
-      const res = await fetch(`/api/bill-reminders/upcoming?days=${daysAhead}`);
-      if (!res.ok) throw new Error("Failed to fetch upcoming bills");
-      return res.json();
-    },
+    queryKey: [`/api/bill-reminders/upcoming?days=${daysAhead}`],
   });
 }
 
