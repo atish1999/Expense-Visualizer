@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { useExpenses, useDeleteExpense } from "@/hooks/use-expenses";
@@ -6,9 +6,16 @@ import { useCurrency } from "@/hooks/use-currency";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Trash2, Edit2, AlertCircle } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { type Expense } from "@shared/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -30,21 +37,48 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
+const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50];
+
 export default function ExpensesList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const isMobile = useIsMobile();
 
   const { data: expenses, isLoading } = useExpenses();
   const deleteMutation = useDeleteExpense();
   const { formatShort } = useCurrency();
 
-  const filteredExpenses = expenses?.filter(expense => 
-    expense.description.toLowerCase().includes(search.toLowerCase()) ||
-    expense.category.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredExpenses = useMemo(() => {
+    return expenses?.filter(expense => 
+      expense.description.toLowerCase().includes(search.toLowerCase()) ||
+      expense.category.toLowerCase().includes(search.toLowerCase())
+    ) ?? [];
+  }, [expenses, search]);
+
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
+  
+  const paginatedExpenses = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredExpenses.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredExpenses, currentPage, itemsPerPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
 
   const handleEdit = (expense: Expense) => {
     setEditingExpense(expense);
@@ -91,7 +125,7 @@ export default function ExpensesList() {
               placeholder="Search transactions..." 
               className="pl-10"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               data-testid="input-search"
             />
           </div>
@@ -101,8 +135,8 @@ export default function ExpensesList() {
           <div className="space-y-3">
             {isLoading ? (
               <div className="text-center py-8 text-muted-foreground">Loading...</div>
-            ) : filteredExpenses && filteredExpenses.length > 0 ? (
-              filteredExpenses.map((expense) => (
+            ) : paginatedExpenses.length > 0 ? (
+              paginatedExpenses.map((expense) => (
                 <Card 
                   key={expense.id} 
                   className="p-4"
@@ -171,8 +205,8 @@ export default function ExpensesList() {
                     <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center">Loading...</TableCell>
                     </TableRow>
-                  ) : filteredExpenses && filteredExpenses.length > 0 ? (
-                    filteredExpenses.map((expense) => (
+                  ) : paginatedExpenses.length > 0 ? (
+                    paginatedExpenses.map((expense) => (
                       <TableRow key={expense.id} className="group" data-testid={`row-expense-${expense.id}`}>
                         <TableCell className="font-medium text-muted-foreground">
                           {format(new Date(expense.date), "MMM dd, yyyy")}
@@ -222,6 +256,106 @@ export default function ExpensesList() {
                   )}
                 </TableBody>
               </Table>
+            </div>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {filteredExpenses.length > 0 && (
+          <div className="bg-card rounded-xl border border-border/50 shadow-sm p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Showing</span>
+                <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                  <SelectTrigger className="w-[70px] h-8" data-testid="select-items-per-page">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={String(option)}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span>of {filteredExpenses.length} transactions</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  data-testid="button-prev-page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {totalPages <= 5 ? (
+                    Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handlePageChange(page)}
+                        data-testid={`button-page-${page}`}
+                      >
+                        {page}
+                      </Button>
+                    ))
+                  ) : (
+                    <>
+                      <Button
+                        variant={currentPage === 1 ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handlePageChange(1)}
+                        data-testid="button-page-1"
+                      >
+                        1
+                      </Button>
+                      {currentPage > 3 && <span className="px-2 text-muted-foreground">...</span>}
+                      {currentPage > 2 && currentPage < totalPages && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          data-testid={`button-page-${currentPage}`}
+                        >
+                          {currentPage}
+                        </Button>
+                      )}
+                      {currentPage < totalPages - 2 && <span className="px-2 text-muted-foreground">...</span>}
+                      {totalPages > 1 && (
+                        <Button
+                          variant={currentPage === totalPages ? "default" : "outline"}
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handlePageChange(totalPages)}
+                          data-testid={`button-page-${totalPages}`}
+                        >
+                          {totalPages}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  data-testid="button-next-page"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
