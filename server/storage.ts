@@ -332,6 +332,52 @@ export class DatabaseStorage implements IStorage {
     const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return names[month];
   }
+
+  // Bill Reminder methods
+  async getBillReminders(userId: string): Promise<BillReminder[]> {
+    return await db.select()
+      .from(billReminders)
+      .where(eq(billReminders.userId, userId))
+      .orderBy(asc(billReminders.dueDate));
+  }
+
+  async getBillReminder(id: number): Promise<BillReminder | undefined> {
+    const [reminder] = await db.select().from(billReminders).where(eq(billReminders.id, id));
+    return reminder;
+  }
+
+  async createBillReminder(reminder: FullInsertBillReminder): Promise<BillReminder> {
+    const [created] = await db.insert(billReminders).values(reminder).returning();
+    return created;
+  }
+
+  async updateBillReminder(id: number, updates: UpdateBillReminderRequest): Promise<BillReminder> {
+    const [updated] = await db.update(billReminders)
+      .set(updates)
+      .where(eq(billReminders.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteBillReminder(id: number): Promise<void> {
+    await db.delete(billReminders).where(eq(billReminders.id, id));
+  }
+
+  async getUpcomingBills(userId: string, daysAhead: number): Promise<BillReminder[]> {
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + daysAhead);
+    
+    return await db.select()
+      .from(billReminders)
+      .where(and(
+        eq(billReminders.userId, userId),
+        eq(billReminders.isActive, true),
+        gte(billReminders.dueDate, today.toISOString().split('T')[0]),
+        lte(billReminders.dueDate, futureDate.toISOString().split('T')[0])
+      ))
+      .orderBy(asc(billReminders.dueDate));
+  }
 }
 
 export const storage = new DatabaseStorage();

@@ -58,11 +58,11 @@ export const fullInsertExpenseSchema = createInsertSchema(expenses, {
 
 // Bill reminder schemas
 export const insertBillReminderSchema = createInsertSchema(billReminders, {
-  dueDate: z.coerce.date(),
+  dueDate: z.string(),
 }).omit({ id: true, userId: true, createdAt: true });
 
 export const fullInsertBillReminderSchema = createInsertSchema(billReminders, {
-  dueDate: z.coerce.date(),
+  dueDate: z.string(),
 }).omit({ id: true, createdAt: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
