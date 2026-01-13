@@ -6,7 +6,7 @@ import { useCurrency } from "@/hooks/use-currency";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Trash2, Edit2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, AlertCircle, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { format } from "date-fns";
 import { type Expense } from "@shared/schema";
 import {
@@ -108,14 +108,27 @@ export default function ExpensesList() {
               Manage and review all your expense records.
             </p>
           </div>
-          <Button 
-            onClick={() => setIsFormOpen(true)}
-            className="shadow-lg shadow-primary/25 hover:shadow-primary/30 transition-all w-full sm:w-auto"
-            data-testid="button-add-transaction"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Transaction
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              asChild
+              className="w-full sm:w-auto"
+              data-testid="button-export-csv"
+            >
+              <a href="/api/export/csv" download="expenses.csv">
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </a>
+            </Button>
+            <Button 
+              onClick={() => setIsFormOpen(true)}
+              className="shadow-lg shadow-primary/25 hover:shadow-primary/30 transition-all w-full sm:w-auto"
+              data-testid="button-add-transaction"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Transaction
+            </Button>
+          </div>
         </div>
 
         <div className="bg-card rounded-xl border border-border/50 shadow-sm p-3 md:p-4">
