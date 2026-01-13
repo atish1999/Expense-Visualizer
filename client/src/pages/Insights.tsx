@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { useInsights } from "@/hooks/use-insights";
 import { useCurrency } from "@/hooks/use-currency";
+import { useFinancialHealthScore } from "@/hooks/use-financial-health";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +32,8 @@ import {
   LineChart,
   Line,
   Legend,
+  PieChart,
+  Pie,
 } from "recharts";
 import {
   TrendingUp,
@@ -41,6 +46,11 @@ import {
   PieChart as PieChartIcon,
   Activity,
   Target,
+  AlertTriangle,
+  Lightbulb,
+  Download,
+  Zap,
+  AlertCircle,
 } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, subQuarters, startOfQuarter, endOfQuarter, startOfYear } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -103,6 +113,7 @@ export default function Insights() {
   };
 
   const { data: insights, isLoading } = useInsights(query);
+  const { data: financialHealth } = useFinancialHealthScore();
 
   const getTrendIcon = (trend: "up" | "down" | "stable") => {
     switch (trend) {
@@ -154,14 +165,54 @@ export default function Insights() {
     return dataPoint;
   }) || [];
 
+  // Pie chart data for category distribution
+  const pieChartData = insights?.categoryTrends.map(cat => ({
+    name: cat.category,
+    value: cat.currentTotal / 100,
+  })) || [];
+
+  // Export functionality
+  const handleExportData = () => {
+    if (!insights) return;
+    
+    const csvData = [
+      ["Period", "Total Spending"],
+      ...insights.periodBuckets.map(b => [b.label, (b.total / 100).toFixed(2)]),
+      [],
+      ["Category", "Current Total", "Previous Total", "Change %"],
+      ...insights.categoryTrends.map(c => [
+        c.category,
+        (c.currentTotal / 100).toFixed(2),
+        (c.previousTotal / 100).toFixed(2),
+        c.changePercent.toFixed(1) + "%"
+      ])
+    ].map(row => row.join(",")).join("\n");
+
+    const blob = new Blob([csvData], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `expense-insights-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Layout>
       <div className="flex flex-col gap-4 md:gap-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Insights</h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            Analyze your spending patterns and trends over time.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Insights</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
+              Analyze your spending patterns and trends over time.
+            </p>
+          </div>
+          {insights && (
+            <Button onClick={handleExportData} variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export Data
+            </Button>
+          )}
         </div>
 
         <Card className="shadow-sm border-border/50">
@@ -369,6 +420,251 @@ export default function Insights() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Pie Chart for Category Distribution */}
+            {pieChartData.length > 0 && (
+              <Card className="shadow-sm border-border/50">
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg">Category Distribution</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 md:p-6 pt-0">
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieChartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {pieChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => `${currency.symbol}${value.toFixed(2)}`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Financial Health Score */}
+            {financialHealth && (
+              <Card className="shadow-sm border-border/50">
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <Target className="w-5 h-5" />
+                    Financial Health Score
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Overall Score</span>
+                        <span className={cn(
+                          "text-2xl font-bold",
+                          financialHealth.overall >= 80 ? "text-green-600" :
+                          financialHealth.overall >= 60 ? "text-yellow-600" :
+                          "text-red-600"
+                        )}>
+                          {financialHealth.overall}/100
+                        </span>
+                      </div>
+                      <Progress value={financialHealth.overall} className="h-3" />
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Grade: <span className="font-semibold">{financialHealth.grade}</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Budget Adherence</div>
+                        <Progress value={financialHealth.budgetAdherence} className="h-2" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Savings Rate</div>
+                        <Progress value={financialHealth.savingsRate} className="h-2" />
+                      </div>
+                    </div>
+                    {financialHealth.insights.length > 0 && (
+                      <div className="pt-2">
+                        <div className="text-xs font-medium mb-2">Key Insights:</div>
+                        <ul className="text-xs text-muted-foreground space-y-1">
+                          {financialHealth.insights.slice(0, 3).map((insight, idx) => (
+                            <li key={idx}>• {insight}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Spending Velocity */}
+            {insights.spendingVelocity && (
+              <Card className="shadow-sm border-border/50">
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <Zap className="w-5 h-5" />
+                    Spending Velocity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Daily Average</div>
+                      <div className="text-lg font-bold">{formatAmount(insights.spendingVelocity.dailyAverage)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Weekly Average</div>
+                      <div className="text-lg font-bold">{formatAmount(insights.spendingVelocity.weeklyAverage)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Current Daily Rate</div>
+                      <div className="text-lg font-bold">{formatAmount(insights.spendingVelocity.currentDailyRate)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Projected Total</div>
+                      <div className={cn(
+                        "text-lg font-bold",
+                        insights.spendingVelocity.projectedPeriodTotal > insights.totalCurrentPeriod * 1.1
+                          ? "text-red-600"
+                          : "text-foreground"
+                      )}>
+                        {formatAmount(insights.spendingVelocity.projectedPeriodTotal)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+                    {insights.spendingVelocity.daysElapsed} days elapsed, {insights.spendingVelocity.daysRemaining} days remaining
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Budget Comparisons */}
+            {insights.budgetComparisons && insights.budgetComparisons.length > 0 && (
+              <Card className="shadow-sm border-border/50">
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg">Budget vs Actual</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="space-y-4">
+                    {insights.budgetComparisons.map((budget, idx) => (
+                      <div key={budget.category} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm">{budget.category}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-mono">
+                              {formatAmount(budget.spent)} / {formatAmount(budget.budgetAmount)}
+                            </span>
+                            {budget.isOverBudget && (
+                              <Badge variant="destructive" className="text-xs">Over Budget</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Progress 
+                          value={Math.min(budget.percentUsed, 100)} 
+                          className={cn(
+                            "h-2",
+                            budget.isOverBudget ? "bg-red-500" : 
+                            budget.percentUsed >= 80 ? "bg-yellow-500" : 
+                            "bg-green-500"
+                          )}
+                        />
+                        <div className="text-xs text-muted-foreground">
+                          {budget.percentUsed}% used • {budget.isOverBudget ? "Exceeded by " : "Remaining: "}
+                          {formatAmount(Math.abs(budget.remaining))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recommendations */}
+            {insights.recommendations && insights.recommendations.length > 0 && (
+              <Card className="shadow-sm border-border/50">
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5" />
+                    Recommendations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="space-y-3">
+                    {insights.recommendations.map((rec, idx) => (
+                      <Alert 
+                        key={idx}
+                        className={cn(
+                          rec.priority === "high" ? "border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800" :
+                          rec.priority === "medium" ? "border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800" :
+                          "border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800"
+                        )}
+                      >
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle className="text-sm font-semibold">{rec.title}</AlertTitle>
+                        <AlertDescription className="text-sm mt-1">
+                          {rec.message}
+                          {rec.action && (
+                            <Button 
+                              variant="link" 
+                              className="h-auto p-0 ml-2 text-xs"
+                              onClick={() => window.location.href = rec.action!}
+                            >
+                              View →
+                            </Button>
+                          )}
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Anomalies */}
+            {insights.anomalies && insights.anomalies.length > 0 && (
+              <Card className="shadow-sm border-border/50">
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                    Unusual Spending Detected
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="space-y-3">
+                    {insights.anomalies.slice(0, 5).map((anomaly, idx) => (
+                      <div key={idx} className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{anomaly.category}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{anomaly.description}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(anomaly.date), "MMM dd, yyyy")}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-sm">{formatAmount(anomaly.amount)}</div>
+                            <div className="text-xs text-red-600">
+                              {anomaly.deviationPercent > 0 ? "+" : ""}
+                              {anomaly.deviationPercent.toFixed(0)}% above average
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
               {insights.categoryTrends.length > 1 && (
                 <Card className="shadow-sm border-border/50">

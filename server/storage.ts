@@ -36,6 +36,10 @@ import {
   type CategoryTrend,
   type FinancialPattern,
   type FinancialHealthScore,
+  type BudgetComparison,
+  type SpendingVelocity,
+  type Anomaly,
+  type Recommendation,
 } from "@shared/schema";
 import { type InsightsQuery } from "@shared/routes";
 
@@ -347,6 +351,172 @@ export class DatabaseStorage implements IStorage {
       topShrinkingPercent: shrinkingCategories[0]?.changePercent || 0,
     };
 
+    // Calculate budget comparisons (for current period)
+    const budgetComparisons: BudgetComparison[] = [];
+    try {
+      const userBudgets = await this.getBudgets(userId);
+      const activeBudgets = userBudgets.filter(b => b.isActive);
+      
+      // Calculate spending by category for current period
+      const spendingByCategory = new Map<string, number>();
+      currentExpenses.forEach(expense => {
+        const current = spendingByCategory.get(expense.category) || 0;
+        spendingByCategory.set(expense.category, current + expense.amount);
+      });
+
+      for (const budget of activeBudgets) {
+        const spent = spendingByCategory.get(budget.category) || 0;
+        // Adjust budget amount based on period
+        let periodBudget = budget.amount;
+        if (budget.period === 'monthly') {
+          const numMonths = Math.max(1, this.getMonthsBetween(startDate, endDate).length);
+          periodBudget = budget.amount * numMonths;
+        } else if (budget.period === 'weekly') {
+          const numWeeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+          periodBudget = budget.amount * numWeeks;
+        } else if (budget.period === 'yearly') {
+          const numYears = Math.max(1, this.getYearsBetween(startDate, endDate).length);
+          periodBudget = budget.amount * numYears;
+        }
+
+        const remaining = Math.max(0, periodBudget - spent);
+        const percentUsed = periodBudget > 0 ? Math.round((spent / periodBudget) * 100) : 0;
+        
+        budgetComparisons.push({
+          category: budget.category,
+          budgetAmount: periodBudget,
+          spent,
+          remaining,
+          percentUsed,
+          isOverBudget: spent > periodBudget,
+        });
+      }
+    } catch (err) {
+      // Budgets might not exist, continue without them
+    }
+
+    // Calculate spending velocity
+    const periodDurationMs = endDate.getTime() - startDate.getTime();
+    const periodDurationDays = Math.max(1, Math.ceil(periodDurationMs / (24 * 60 * 60 * 1000)));
+    const daysElapsed = Math.max(1, Math.ceil((now.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)));
+    const daysRemaining = Math.max(0, periodDurationDays - daysElapsed);
+    
+    const dailyAverage = totalCurrentPeriod / periodDurationDays;
+    const weeklyAverage = dailyAverage * 7;
+    const monthlyAverage = dailyAverage * 30;
+    const currentDailyRate = daysElapsed > 0 ? totalCurrentPeriod / daysElapsed : 0;
+    const projectedPeriodTotal = currentDailyRate * periodDurationDays;
+
+    const spendingVelocity: SpendingVelocity = {
+      dailyAverage,
+      weeklyAverage,
+      monthlyAverage,
+      currentDailyRate,
+      projectedPeriodTotal,
+      daysElapsed,
+      daysRemaining,
+    };
+
+    // Detect anomalies (spending spikes > 2x average for category)
+    const anomalies: Anomaly[] = [];
+    for (const category of categories) {
+      const categoryExpenses = currentExpenses.filter(e => e.category === category);
+      if (categoryExpenses.length === 0) continue;
+
+      const categoryTotal = categoryExpenses.reduce((sum, e) => sum + e.amount, 0);
+      const avgExpense = categoryTotal / categoryExpenses.length;
+      const threshold = avgExpense * 2.5; // Flag expenses > 2.5x average
+
+      categoryExpenses.forEach(expense => {
+        if (expense.amount > threshold) {
+          const expectedAmount = avgExpense;
+          const deviation = expense.amount - expectedAmount;
+          const deviationPercent = (deviation / expectedAmount) * 100;
+          
+          anomalies.push({
+            category: expense.category,
+            amount: expense.amount,
+            expectedAmount,
+            deviation,
+            deviationPercent: Math.round(deviationPercent * 10) / 10,
+            date: expense.date.toISOString(),
+            description: expense.description,
+          });
+        }
+      });
+    }
+    // Sort by deviation percent descending
+    anomalies.sort((a, b) => b.deviationPercent - a.deviationPercent);
+
+    // Generate recommendations
+    const recommendations: Recommendation[] = [];
+    
+    // Budget-based recommendations
+    budgetComparisons.forEach(budget => {
+      if (budget.isOverBudget) {
+        recommendations.push({
+          type: "budget",
+          priority: "high",
+          title: `Over Budget: ${budget.category}`,
+          message: `You've exceeded your ${budget.category} budget by ${Math.round(((budget.spent - budget.budgetAmount) / budget.budgetAmount) * 100)}%. Consider reviewing your spending in this category.`,
+          action: `/budgets`,
+        });
+      } else if (budget.percentUsed >= 80) {
+        recommendations.push({
+          type: "budget",
+          priority: "medium",
+          title: `Approaching Budget Limit: ${budget.category}`,
+          message: `You've used ${budget.percentUsed}% of your ${budget.category} budget. You have ${Math.round(budget.remaining / 100)} remaining.`,
+          action: `/budgets`,
+        });
+      }
+    });
+
+    // Spending trend recommendations
+    if (overallTrend === "up" && overallChangePercent > 15) {
+      recommendations.push({
+        type: "trend",
+        priority: "high",
+        title: "Significant Spending Increase",
+        message: `Your spending has increased by ${overallChangePercent.toFixed(1)}% compared to the previous period. Review your expenses to identify areas for reduction.`,
+      });
+    }
+
+    // Category growth recommendations
+    if (growingCategories.length > 0 && growingCategories[0].changePercent > 30) {
+      recommendations.push({
+        type: "category",
+        priority: "medium",
+        title: `Rapid Growth: ${growingCategories[0].category}`,
+        message: `Your spending in ${growingCategories[0].category} has increased by ${growingCategories[0].changePercent.toFixed(1)}%. This may warrant a budget review.`,
+        action: `/budgets`,
+      });
+    }
+
+    // Velocity-based recommendations
+    if (projectedPeriodTotal > totalCurrentPeriod * 1.2) {
+      const overspendAmount = projectedPeriodTotal - totalCurrentPeriod;
+      recommendations.push({
+        type: "spending",
+        priority: "high",
+        title: "Projected Overspending",
+        message: `At your current spending rate, you're projected to exceed your period total by ${Math.round(overspendAmount / 100)}. Consider reducing discretionary spending.`,
+      });
+    }
+
+    // Savings opportunity recommendations
+    if (shrinkingCategories.length > 0) {
+      const savedCategory = shrinkingCategories[0];
+      if (savedCategory.changePercent < -20) {
+        recommendations.push({
+          type: "savings",
+          priority: "low",
+          title: "Great Progress!",
+          message: `You've reduced spending in ${savedCategory.category} by ${Math.abs(savedCategory.changePercent).toFixed(1)}%. Keep it up!`,
+        });
+      }
+    }
+
     return {
       periodBuckets,
       categoryTrends,
@@ -356,6 +526,10 @@ export class DatabaseStorage implements IStorage {
       overallChangePercent: Math.round(overallChangePercent * 10) / 10,
       overallTrend,
       financialPattern,
+      budgetComparisons: budgetComparisons.length > 0 ? budgetComparisons : undefined,
+      spendingVelocity,
+      anomalies: anomalies.length > 0 ? anomalies.slice(0, 10) : undefined, // Limit to top 10
+      recommendations: recommendations.length > 0 ? recommendations : undefined,
     };
   }
 

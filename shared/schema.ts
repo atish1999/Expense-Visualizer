@@ -318,6 +318,43 @@ export interface FinancialPattern {
   topShrinkingPercent: number;
 }
 
+export interface BudgetComparison {
+  category: string;
+  budgetAmount: number;
+  spent: number;
+  remaining: number;
+  percentUsed: number;
+  isOverBudget: boolean;
+}
+
+export interface SpendingVelocity {
+  dailyAverage: number;
+  weeklyAverage: number;
+  monthlyAverage: number;
+  currentDailyRate: number;
+  projectedPeriodTotal: number;
+  daysElapsed: number;
+  daysRemaining: number;
+}
+
+export interface Anomaly {
+  category: string;
+  amount: number;
+  expectedAmount: number;
+  deviation: number;
+  deviationPercent: number;
+  date: string;
+  description: string;
+}
+
+export interface Recommendation {
+  type: "budget" | "spending" | "savings" | "category" | "trend";
+  priority: "high" | "medium" | "low";
+  title: string;
+  message: string;
+  action?: string;
+}
+
 export interface InsightsResponse {
   periodBuckets: PeriodBucket[];
   categoryTrends: CategoryTrend[];
@@ -327,4 +364,8 @@ export interface InsightsResponse {
   overallChangePercent: number;
   overallTrend: "up" | "down" | "stable";
   financialPattern: FinancialPattern;
+  budgetComparisons?: BudgetComparison[];
+  spendingVelocity?: SpendingVelocity;
+  anomalies?: Anomaly[];
+  recommendations?: Recommendation[];
 }
