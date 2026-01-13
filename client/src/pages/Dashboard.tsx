@@ -226,54 +226,54 @@ export default function Dashboard() {
                   <div className="flex flex-col items-center gap-3">
                     <div className="relative">
                       <div className="w-24 h-24 rounded-full border-8 border-muted flex items-center justify-center">
-                        <span className={`text-3xl font-bold ${getGradeColor(healthScore.grade)}`}>{healthScore.grade}</span>
+                        <span className={`text-3xl font-bold ${getGradeColor(healthScore.grade)}`} data-testid="text-health-grade">{healthScore.grade}</span>
                       </div>
                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-background px-2 py-0.5 rounded-full border border-border">
-                        <span className="text-sm font-medium">{healthScore.overall}/100</span>
+                        <span className="text-sm font-medium" data-testid="text-health-score">{healthScore.overall}/100</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-2" data-testid="metric-budget-adherence">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Target className="w-4 h-4" />
                         <span>Budget</span>
                       </div>
                       <Progress value={healthScore.budgetAdherence} className="h-2" />
-                      <span className="text-xs text-muted-foreground">{healthScore.budgetAdherence}%</span>
+                      <span className="text-xs text-muted-foreground" data-testid="text-budget-adherence">{healthScore.budgetAdherence}%</span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2" data-testid="metric-savings-rate">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <PiggyBank className="w-4 h-4" />
                         <span>Savings</span>
                       </div>
                       <Progress value={healthScore.savingsRate} className="h-2" />
-                      <span className="text-xs text-muted-foreground">{healthScore.savingsRate}%</span>
+                      <span className="text-xs text-muted-foreground" data-testid="text-savings-rate">{healthScore.savingsRate}%</span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2" data-testid="metric-spending-consistency">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <TrendingUp className="w-4 h-4" />
                         <span>Consistency</span>
                       </div>
                       <Progress value={healthScore.spendingConsistency} className="h-2" />
-                      <span className="text-xs text-muted-foreground">{healthScore.spendingConsistency}%</span>
+                      <span className="text-xs text-muted-foreground" data-testid="text-spending-consistency">{healthScore.spendingConsistency}%</span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2" data-testid="metric-bill-payment">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CreditCard className="w-4 h-4" />
                         <span>Bills</span>
                       </div>
                       <Progress value={healthScore.billPaymentScore} className="h-2" />
-                      <span className="text-xs text-muted-foreground">{healthScore.billPaymentScore}%</span>
+                      <span className="text-xs text-muted-foreground" data-testid="text-bill-payment">{healthScore.billPaymentScore}%</span>
                     </div>
                   </div>
 
                   {healthScore.insights.length > 0 && (
-                    <div className="pt-4 border-t border-border/50 space-y-2">
+                    <div className="pt-4 border-t border-border/50 space-y-2" data-testid="health-insights">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Insights</p>
                       {healthScore.insights.slice(0, 2).map((insight, index) => (
-                        <p key={index} className="text-sm text-foreground">{insight}</p>
+                        <p key={index} className="text-sm text-foreground" data-testid={`text-insight-${index}`}>{insight}</p>
                       ))}
                     </div>
                   )}
