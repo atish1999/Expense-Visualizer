@@ -3,6 +3,7 @@ import { LayoutDashboard, Receipt, LogOut, WalletCards, BarChart3, Bell, PiggyBa
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrency, CURRENCIES, type CurrencyCode } from "@/hooks/use-currency";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Select,
   SelectContent,
@@ -119,15 +120,18 @@ export function AppSidebar() {
           <p className="text-sm font-medium" data-testid="text-username">{user?.firstName || "User"}</p>
           <p className="text-xs text-muted-foreground truncate" data-testid="text-email">{user?.email}</p>
         </div>
-        <Button 
-          variant="outline" 
-          className="w-full justify-start gap-3 hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20 transition-colors"
-          onClick={() => logout()}
-          data-testid="button-logout"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </Button>
+        <div className="flex items-center gap-2 mb-4">
+          <ThemeToggle />
+          <Button 
+            variant="outline" 
+            className="flex-1 justify-start gap-3 hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20 transition-colors"
+            onClick={() => logout()}
+            data-testid="button-logout"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

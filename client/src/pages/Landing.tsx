@@ -9,7 +9,7 @@ export default function Landing() {
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Wallet className="text-white w-5 h-5" />
+              <Wallet className="text-primary-foreground w-5 h-5" />
             </div>
             <span className="font-display font-bold text-xl tracking-tight">FinTrack</span>
           </div>

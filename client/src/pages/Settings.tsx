@@ -45,7 +45,13 @@ import {
   ArrowRight,
   Hash,
   Palette,
+  Moon,
+  Sun,
+  Monitor,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "next-themes";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   useCustomCategories,
   useCreateCustomCategory,
@@ -120,6 +126,7 @@ type RuleFormData = z.infer<typeof ruleFormSchema>;
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("categories");
+  const { theme, setTheme } = useTheme();
   const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
@@ -241,6 +248,10 @@ export default function SettingsPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6">
+          <TabsTrigger value="appearance" data-testid="tab-appearance">
+            <Palette className="w-4 h-4 mr-2" />
+            Appearance
+          </TabsTrigger>
           <TabsTrigger value="categories" data-testid="tab-categories">
             <Folder className="w-4 h-4 mr-2" />
             Custom Categories
@@ -250,6 +261,79 @@ export default function SettingsPage() {
             Auto-Categorization Rules
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="appearance">
+          <Card>
+            <CardHeader>
+              <CardTitle>Theme</CardTitle>
+              <CardDescription>
+                Choose your preferred theme. System will match your device settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Sun className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Light Mode</p>
+                    <p className="text-sm text-muted-foreground">Bright and clean interface</p>
+                  </div>
+                </div>
+                <Button
+                  variant={theme === "light" ? "default" : "outline"}
+                  onClick={() => setTheme("light")}
+                  size="sm"
+                >
+                  {theme === "light" && "Active"}
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Moon className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Dark Mode</p>
+                    <p className="text-sm text-muted-foreground">Easy on the eyes</p>
+                  </div>
+                </div>
+                <Button
+                  variant={theme === "dark" ? "default" : "outline"}
+                  onClick={() => setTheme("dark")}
+                  size="sm"
+                >
+                  {theme === "dark" && "Active"}
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Monitor className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">System</p>
+                    <p className="text-sm text-muted-foreground">Match your device</p>
+                  </div>
+                </div>
+                <Button
+                  variant={theme === "system" ? "default" : "outline"}
+                  onClick={() => setTheme("system")}
+                  size="sm"
+                >
+                  {theme === "system" && "Active"}
+                </Button>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Quick Toggle</p>
+                    <p className="text-sm text-muted-foreground">Switch theme quickly</p>
+                  </div>
+                  <ThemeToggle />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="categories">
           <div className="flex justify-between items-center mb-4">
