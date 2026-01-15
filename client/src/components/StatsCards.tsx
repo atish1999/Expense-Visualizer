@@ -44,7 +44,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Top Category
           </CardTitle>
-          <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
             <TrendingUp className="h-4 w-4" />
           </div>
         </CardHeader>
@@ -63,7 +63,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Daily Average
           </CardTitle>
-          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
             <Wallet className="h-4 w-4" />
           </div>
         </CardHeader>

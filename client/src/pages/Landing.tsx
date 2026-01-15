@@ -59,7 +59,7 @@ export default function Landing() {
           <div className="container mx-auto px-6">
             <div className="grid md:grid-cols-3 gap-8">
               <div className="bg-card p-8 rounded-2xl shadow-sm border border-border/50 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 mb-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-6">
                   <Wallet className="w-6 h-6" />
                 </div>
                 <h3 className="text-xl font-bold font-display mb-3">Expense Tracking</h3>
@@ -69,7 +69,7 @@ export default function Landing() {
               </div>
 
               <div className="bg-card p-8 rounded-2xl shadow-sm border border-border/50 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-6">
                   <PieChart className="w-6 h-6" />
                 </div>
                 <h3 className="text-xl font-bold font-display mb-3">Visual Insights</h3>
@@ -79,7 +79,7 @@ export default function Landing() {
               </div>
 
               <div className="bg-card p-8 rounded-2xl shadow-sm border border-border/50 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 mb-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-6">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <h3 className="text-xl font-bold font-display mb-3">Secure & Private</h3>

@@ -48,8 +48,8 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-emerald-300 flex items-center justify-center shadow-lg shadow-primary/20">
-            <WalletCards className="text-white w-6 h-6" />
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+            <WalletCards className="text-primary-foreground w-6 h-6" />
           </div>
           <div>
             <h1 className="font-display font-bold text-xl tracking-tight">FinTrack</h1>
