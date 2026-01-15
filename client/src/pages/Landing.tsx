@@ -180,15 +180,6 @@ export default function Landing() {
                       </div>
                       <span className="text-xs md:text-sm text-muted-foreground" data-testid="text-time-split">Just now</span>
                     </div>
-                    <div className="flex items-center justify-between p-2.5 md:p-3 bg-muted/50 rounded-lg" data-testid="row-transaction-shopping">
-                      <div className="flex items-center gap-2 md:gap-3">
-                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-destructive/20 flex items-center justify-center">
-                          <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 text-destructive" />
-                        </div>
-                        <span className="text-xs md:text-sm font-medium" data-testid="text-transaction-shopping">Shopping</span>
-                      </div>
-                      <span className="text-xs md:text-sm font-mono text-destructive" data-testid="text-amount-shopping">-$112.00</span>
-                    </div>
                     <div className="flex items-center justify-between p-2.5 md:p-3 bg-muted/50 rounded-lg" data-testid="row-transaction-savings">
                       <div className="flex items-center gap-2 md:gap-3">
                         <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary/20 flex items-center justify-center">
@@ -197,6 +188,15 @@ export default function Landing() {
                         <span className="text-xs md:text-sm font-medium" data-testid="text-transaction-savings">Savings Goal</span>
                       </div>
                       <span className="text-xs md:text-sm font-mono text-primary" data-testid="text-amount-savings">+$1,500.00</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 md:p-3 bg-muted/50 rounded-lg" data-testid="row-transaction-shopping">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-destructive/20 flex items-center justify-center">
+                          <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 text-destructive" />
+                        </div>
+                        <span className="text-xs md:text-sm font-medium" data-testid="text-transaction-shopping">Shopping</span>
+                      </div>
+                      <span className="text-xs md:text-sm font-mono text-destructive" data-testid="text-amount-shopping">-$112.00</span>
                     </div>
                   </div>
                 </div>
